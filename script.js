@@ -181,15 +181,16 @@ function setShape(type) {
         arr[i3 + 2] = Math.sin(angle) * radius;
         state.particleMeta[i] = "ring";
 
-        // Random burst direction for each ring particle
+        // Outward radial burst direction for a natural spray effect
         const v3 = i * 3;
-        const phi = Math.random() * Math.PI * 2;
-        const theta = Math.random() * Math.PI;
-        const speed = 0.5 + Math.random() * 1.5;
-        state.particleVelocities[v3] = Math.sin(theta) * Math.cos(phi) * speed;
-        state.particleVelocities[v3 + 1] = Math.cos(theta) * speed;
-        state.particleVelocities[v3 + 2] =
-          Math.sin(theta) * Math.sin(phi) * speed;
+        const dirX = Math.cos(angle);
+        const dirZ = Math.sin(angle);
+        const dirY = (Math.random() - 0.5) * 0.6; // Slight vertical spread
+
+        const speed = 0.8 + Math.random() * 1.5;
+        state.particleVelocities[v3] = dirX * speed;
+        state.particleVelocities[v3 + 1] = dirY * speed;
+        state.particleVelocities[v3 + 2] = dirZ * speed;
       }
     }
     material.uniforms.uColor.value.set(config.colors.saturn);
@@ -304,24 +305,33 @@ function animate() {
     let ty = targets[i3 + 1];
     let tz = targets[i3 + 2];
 
-    // Burst or Sparkle animation
+    // Truly continuous fountain logic FROM WITHIN the planet (REFINED)
     if (
       state.currentShape === "saturn" &&
       state.isBursting &&
       state.particleMeta[i] === "ring"
     ) {
       const v3 = i * 3;
-      // Much faster and more varied cycle for a "constant stream" look
-      // Using a larger multiplier for time and a unique per-particle offset
-      const sprayCycle = (time * 3.5 + ((i * 0.77) % 5.0)) % 5.0;
-      const sprayForce = 5.0 + sprayCycle * 25.0;
+      // pOffset makes every particle different so the flow is constant
+      const pOffset = (i * 1.618033) % 2.0;
+      const sprayCycle = (time * 7.0 + pOffset) % 2.0;
 
-      tx += state.particleVelocities[v3] * sprayForce;
-      ty += state.particleVelocities[v3 + 1] * sprayForce;
-      tz += state.particleVelocities[v3 + 2] * sprayForce;
+      const sprayForce = sprayCycle * 70.0;
 
-      // Gravity/Fountain arc
-      ty -= sprayCycle * sprayCycle * 3.5;
+      tx = state.particleVelocities[v3] * sprayForce;
+      ty = state.particleVelocities[v3 + 1] * sprayForce;
+      tz = state.particleVelocities[v3 + 2] * sprayForce;
+
+      // Add a gravitational arc falloff
+      ty -= sprayCycle * sprayCycle * 11.0;
+
+      // TELEPORT TO CENTER (RESPAWN): If at the start of cycle, snap to center immediately
+      // This makes the fountain look perfectly continuous without particles "flying back"
+      if (sprayCycle < 0.15) {
+        positions[i3] = tx;
+        positions[i3 + 1] = ty;
+        positions[i3 + 2] = tz;
+      }
     } else if (
       state.currentShape === "love" &&
       state.particleMeta[i] === "sparkle"
@@ -422,12 +432,10 @@ function onResults(results) {
     }
     // 2. 5 Jari (Open) -> Saturn Burst
     else if (extCount >= 4) {
-      if (state.currentShape === "saturn") {
-        state.isBursting = true;
-        statusDiv.innerText = "✨ Ring Burst!";
-      } else {
-        statusDiv.innerText = "🖐️ Open Hand";
-      }
+      // Always trigger/keep saturn when opening 5 fingers
+      if (state.currentShape !== "saturn") setShape("saturn");
+      state.isBursting = true;
+      statusDiv.innerText = "✨ Ring Burst!";
     }
     // 3. Peace (2 Fingers) -> I LOVE U
     else if (indexZip && middleZip && !ringZip && !pinkyZip) {
