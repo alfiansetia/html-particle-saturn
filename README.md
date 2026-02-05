@@ -46,4 +46,4 @@ This project focuses on a **premium, ethereal aesthetic**:
 
 ---
 
-Created with 💖 by Antigravity.
+Created with 💖 by Alfian.
