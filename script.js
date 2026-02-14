@@ -275,8 +275,8 @@ function animate() {
 
   // Follow hand
   if (state.handDetected) {
-    const tx = state.handPosition.x * 10;
-    const ty = state.handPosition.y * 7 + 1.5;
+    const tx = state.handPosition.x * 10 - 2.5;
+    const ty = state.handPosition.y * 7 + 3.5;
     particles.position.x += (tx - particles.position.x) * config.lerpSpeed;
     particles.position.y += (ty - particles.position.y) * config.lerpSpeed;
   } else {
